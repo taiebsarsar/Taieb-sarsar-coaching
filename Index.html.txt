@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mon Coaching</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; background: #f2f4f7; color: #222; }
+  header { background: #1f6feb; color: white; padding: 16px; font-size: 20px; text-align: center; position: relative; }
+  #deconnexion { position: absolute; right: 10px; top: 10px; background: rgba(255,255,255,0.25); color: white; padding: 8px 10px; font-size: 14px; }
+  main { padding: 12px; max-width: 600px; margin: auto; }
+  .carte { background: white; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .carte h3 { margin: 0 0 6px 0; }
+  .reste { font-size: 26px; font-weight: bold; color: #1f6feb; }
+  .reste.vide { color: #d1242f; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 14px; font-weight: bold; margin: 6px 0; }
+  .paye { background: #d4f5dd; color: #1a7f37; }
+  .nonpaye { background: #ffd8d8; color: #d1242f; }
+  label.case { display: block; margin: 6px 0; font-size: 16px; }
+  input[type=checkbox] { width: 22px; height: 22px; vertical-align: middle; margin-right: 8px; }
+  input[type=text], input[type=email], input[type=password], input[type=datetime-local], select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+  button { padding: 12px 14px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 4px 4px 0 0; }
+  .principal { background: #1f6feb; color: white; }
+  .pointer { background: #2da44e; color: white; }
+  .secondaire { background: #e6e8eb; }
+  .danger { background: #ffd8d8; color: #d1242f; }
+  .cache { display: none; }
+  .erreur { color: #d1242f; margin: 6px 0; }
+  ul { padding-left: 18px; margin: 8px 0 0 0; font-size: 14px; color: #555; }
+  h2 { margin: 18px 0 8px 0; font-size: 18px; }
+</style>
+</head>
+<body>
+<header>Mon Coaching<button id="deconnexion" class="cache" onclick="seDeconnecter()">Quitter</button></header>
+<main>
+
+  <div id="ecranConnexion" class="carte">
+    <h3>Connexion</h3>
+    <input type="email" id="email" placeholder="Ton e-mail" autocomplete="email">
+    <input type="password" id="mdp" placeholder="Mot de passe" autocomplete="current-password">
+    <div id="messageConnexion" class="erreur"></div>
+    <button class="principal" onclick="seConnecter()">Se connecter</button>
+    <button class="secondaire" onclick="creerCompte()">Créer mon compte</button>
+  </div>
+
+  <div id="espaceClient" class="cache"></div>
+
+  <div id="espaceCoach" class="cache">
+    <div class="carte">
+      <h3>Nouveau rendez-vous</h3>
+      <select id="rdvClient"></select>
+      <input type="datetime-local" id="rdvDate">
+      <button class="principal" onclick="ajouterRdv()">Planifier</button>
+    </div>
+    <h2>Rendez-vous à venir</h2>
+    <div id="listeRdv"></div>
+    <h2>Clients</h2>
+    <div id="listeClients"></div>
+  </div>
+
+</main>
+
+<script>
+  const SUPABASE_URL = "https://tfpaycxwubwfyqscpzeq.supabase.co";
+  const SUPABASE_CLE = "sb_publishable_vwNP6G6cL9Wh3fwpJBNylQ_OJJzCs-5";
+
+  const TAILLE_PACK = 12;
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_CLE);
+
+  function montrer(id, oui) { document.getElementById(id).classList.toggle('cache', !oui); }
+  function dateFr(d, long) {
+    return new Date(d).toLocaleString('fr-FR', long ? { dateStyle: 'full', timeStyle: 'short' } : undefined);
+  }
+
+  async function seConnecter() {
+    const email = document.getElementById('email').value.trim();
+    const mdp = document.getElementById('mdp').value;
+    document.getElementById('messageConnexion').textContent = 'Connexion en cours...';
+    const { error } = await sb.auth.signInWithPassword({ email: email, password: mdp });
+    if (error) { document.getElementById('messageConnexion').textContent = 'Connexion impossible : ' + error.message; return; }
+    document.getElementById('messageConnexion').textContent = '';
+    demarrer();
+  }
+
+  async function creerCompte() {
+    const email = document.getElementById('email').value.trim();
+    const mdp = document.getElementById('mdp').value;
+    if (!email || mdp.length < 6) { document.getElementById('messageConnexion').textContent = 'Entre un e-mail et un mot de passe de 6 caractères minimum.'; return; }
+    const { error } = await sb.auth.signUp({ email: email, password: mdp });
+    if (error) { document.getElementById('messageConnexion').textContent = 'Création impossible : ' + error.message; return; }
+    document.getElementById('messageConnexion').textContent = '';
+    seConnecter();
+  }
+
+  async function seDeconnecter() {
+    await sb.auth.signOut();
+    montrer('ecranConnexion', true);
+    montrer('espaceClient', false);
+    montrer('espaceCoach', false);
+    montrer('deconnexion', false);
+  }
+
+  async function demarrer() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data: profil } = await sb.from('profils').select('*').eq('id', user.id).single();
+    if (!profil) { alert('Profil introuvable.'); return; }
+    montrer('ecranConnexion', false);
+    montrer('deconnexion', true);
+    if (profil.role === 'coach') {
+      montrer('espaceCoach', true);
+      montrer('espaceClient', false);
+      afficherCoach();
+    } else {
+      montrer('espaceClient', true);
+      montrer('espaceCoach', false);
+      afficherClient(profil);
+    }
+  }
+
+  async function afficherClient(profil) {
+    const { data: rdvs } = await sb.from('rendez_vous').select('*').eq('client_id', profil.id).eq('fait', false).order('date_rdv');
+    const { data: points } = await sb.from('pointages').select('*').eq('client_id', profil.id).order('date_pointage', { ascending: false });
+    document.getElementById('espaceClient').innerHTML = `
+      <div class="carte">
+        <h3>Bonjour ${profil.nom || profil.email}</h3>
+        <div class="reste ${profil.seances_restantes === 0 ? 'vide' : ''}">${profil.seances_restantes} séance(s) restante(s)</div>
+        <span class="badge ${profil.pack_paye ? 'paye' : 'nonpaye'}">${profil.pack_paye ? 'Payé' : 'Non payé'}</span>
+      </div>
+      <h2>Mes prochains rendez-vous</h2>
+      ${(rdvs && rdvs.length) ? rdvs.map(r => '<div class="carte">' + dateFr(r.date_rdv, true) + '</div>').join('') : '<p style="text-align:center;color:#777">Aucun rendez-vous prévu.</p>'}
+      <h2>Mes séances effectuées</h2>
+      <div class="carte"><ul>${(points && points.length) ? points.map(p => '<li>' + dateFr(p.date_pointage) + '</li>').join('') : '<li>Aucune séance pour le moment.</li>'}</ul></div>`;
+  }
+
+  async function afficherCoach() {
+    const { data: clients } = await sb.from('profils').select('*').eq('role', 'client').order('nom', { nullsFirst: false });
+    const { data: rdvs } = await sb.from('rendez_vous').select('*').eq('fait', false).order('date_rdv');
+    const liste = clients || [];
+
+    document.getElementById('rdvClient').innerHTML = liste.map(c => '<option value="' + c.id + '">' + (c.nom || c.email) + '</option>').join('');
+
+    const nom = id => { const c = liste.find(x => x.id === id); return c ? (c.nom || c.email) : 'Client inconnu'; };
+    document.getElementById('listeRdv').innerHTML = (rdvs && rdvs.length) ? rdvs.map(r => `
+      <div class="carte">
+        <h3>${nom(r.client_id)}</h3>
+        <div>${dateFr(r.date_rdv, true)}</div>
+        <button class="pointer" onclick="rdvFait(${r.id}, '${r.client_id}')">Séance faite (pointer)</button>
+        <button class="danger" onclick="annulerRdv(${r.id})">Annuler</button>
+      </div>`).join('') : '<p style="text-align:center;color:#777">Aucun rendez-vous.</p>';
+
+    document.getElementById('listeClients').innerHTML = liste.length ? liste.map(c => `
+      <div class="carte">
+        <h3>${c.nom || c.email}</h3>
+        <div>${c.email}</div>
+        <div class="reste ${c.seances_restantes === 0 ? 'vide' : ''}">${c.seances_restantes} séance(s) restante(s)</div>
+        <span class="badge ${c.pack_paye ? 'paye' : 'nonpaye'}">${c.pack_paye ? 'Payé' : 'Non payé'}</span>
+        <label class="case"><input type="checkbox" ${c.pack_paye ? 'checked' : ''} onchange="changerPaiement('${c.id}', this.checked)">Pack payé</label>
+        <button class="pointer" onclick="pointer('${c.id}')">Pointer une séance</button>
+        <button class="secondaire" onclick="annulerPointage('${c.id}')">Annuler la dernière</button>
+        <button class="principal" onclick="renouveler('${c.id}')">Nouveau pack de 12</button>
+        <button class="secondaire" onclick="renommer('${c.id}')">Changer le nom</button>
+      </div>`).join('') : '<p style="text-align:center;color:#777">Aucun client pour le moment. Tes clients doivent créer leur compte depuis la page de connexion.</p>';
+  }
+
+  async function changerPaiement(id, valeur) {
+    await sb.from('profils').update({ pack_paye: valeur }).eq('id', id);
+    afficherCoach();
+  }
+
+  async function pointer(id) {
+    const { data: c } = await sb.from('profils').select('seances_restantes').eq('id', id).single();
+    if (c.seances_restantes <= 0) { alert('Plus de séances dans ce pack.'); return; }
+    await sb.from('profils').update({ seances_restantes: c.seances_restantes - 1 }).eq('id', id);
+    await sb.from('pointages').insert({ client_id: id });
+    afficherCoach();
+  }
+
+  async function annulerPointage(id) {
+    const { data: dernier } = await sb.from('pointages').select('id').eq('client_id', id).order('date_pointage', { ascending: false }).limit(1);
+    if (!dernier || dernier.length === 0) { alert('Aucun pointage à annuler.'); return; }
+    const { data: c } = await sb.from('profils').select('seances_restantes').eq('id', id).single();
+    await sb.from('pointages').delete().eq('id', dernier[0].id);
+    await sb.from('profils').update({ seances_restantes: c.seances_restantes + 1 }).eq('id', id);
+    afficherCoach();
+  }
+
+  async function renouveler(id) {
+    if (!confirm('Ajouter un nouveau pack de ' + TAILLE_PACK + ' séances ?')) return;
+    const { data: c } = await sb.from('profils').select('seances_restantes').eq('id', id).single();
+    await sb.from('profils').update({ seances_restantes: c.seances_restantes + TAILLE_PACK, pack_paye: false }).eq('id', id);
+    afficherCoach();
+  }
+
+  async function renommer(id) {
+    const nom = prompt('Nom du client :');
+    if (!nom) return;
+    await sb.from('profils').update({ nom: nom.trim() }).eq('id', id);
+    afficherCoach();
+  }
+
+  async function ajouterRdv() {
+    const clientId = document.getElementById('rdvClient').value;
+    const date = document.getElementById('rdvDate').value;
+    if (!clientId || !date) { alert('Choisis un client et une date.'); return; }
+    await sb.from('rendez_vous').insert({ client_id: clientId, date_rdv: new Date(date).toISOString() });
+    document.getElementById('rdvDate').value = '';
+    afficherCoach();
+  }
+
+  async function rdvFait(rdvId, clientId) {
+    await pointer(clientId);
+    await sb.from('rendez_vous').update({ fait: true }).eq('id', rdvId);
+    afficherCoach();
+  }
+
+  async function annulerRdv(id) {
+    if (!confirm('Annuler ce rendez-vous ?')) return;
+    await sb.from('rendez_vous').delete().eq('id', id);
+    afficherCoach();
+  }
+
+  demarrer();
+</script>
+</body>
+</html>
