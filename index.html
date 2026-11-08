@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang='fr'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'>
+<title>Coach Sarsar Taieb</title>
+<meta name='apple-mobile-web-app-capable' content='yes'>
+<meta name='mobile-web-app-capable' content='yes'>
+<meta name='apple-mobile-web-app-title' content='Coach Sarsar Taieb'>
+<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'>
+<meta name='theme-color' content='#000000'>
+<link rel='apple-touch-icon' href='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 180 180%27%3E%3Crect width=%27180%27 height=%27180%27 fill=%27%23000%27/%3E%3Ccircle cx=%2790%27 cy=%2790%27 r=%2778%27 fill=%27none%27 stroke=%27%23d4af37%27 stroke-width=%276%27/%3E%3Ctext x=%2790%27 y=%27112%27 font-family=%27Georgia,serif%27 font-size=%2768%27 font-weight=%27bold%27 fill=%27%23d4af37%27 text-anchor=%27middle%27%3EST%3C/text%3E%3C/svg%3E'>
+<link rel='icon' href='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 180 180%27%3E%3Crect width=%27180%27 height=%27180%27 fill=%27%23000%27/%3E%3Ccircle cx=%2790%27 cy=%2790%27 r=%2778%27 fill=%27none%27 stroke=%27%23d4af37%27 stroke-width=%276%27/%3E%3Ctext x=%2790%27 y=%27112%27 font-family=%27Georgia,serif%27 font-size=%2768%27 font-weight=%27bold%27 fill=%27%23d4af37%27 text-anchor=%27middle%27%3EST%3C/text%3E%3C/svg%3E'>
+<script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script>
+<style>
+  :root { --or: #d4af37; --or-clair: #f0d77a; --noir: #000; --gris: #141414; --gris2: #1f1f1f; --texte: #f5f1e6; }
+  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family: Georgia, 'Times New Roman', serif; margin: 0; background: var(--noir); color: var(--texte); padding-bottom: env(safe-area-inset-bottom); }
+  header { background: linear-gradient(180deg, #000 0%, #111 100%); color: var(--or); padding: calc(16px + env(safe-area-inset-top)) 16px 16px 16px; font-size: 20px; letter-spacing: 1px; text-align: center; position: relative; border-bottom: 2px solid var(--or); }
+  #deconnexion { position: absolute; right: 10px; bottom: 12px; background: transparent; color: var(--or); border: 1px solid var(--or); padding: 6px 10px; font-size: 13px; border-radius: 8px; margin: 0; }
+  main { padding: 12px; max-width: 600px; margin: auto; }
+  .carte { background: var(--gris); border: 1px solid #3a3320; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .carte h3 { margin: 0 0 6px 0; color: var(--or); }
+  .reste { font-size: 26px; font-weight: bold; color: var(--or-clair); }
+  .reste.vide { color: #ff6b6b; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 14px; font-weight: bold; margin: 6px 0; }
+  .paye { background: #12351f; color: #5be08a; border: 1px solid #5be08a; }
+  .nonpaye { background: #3a1414; color: #ff7a7a; border: 1px solid #ff7a7a; }
+  .partiel { background: #3a3010; color: #f0d77a; border: 1px solid #f0d77a; }
+  .neutre { background: #222; color: #bdb59a; border: 1px solid #6b6450; }
+  .compte { margin: 10px 0 4px 0; border-top: 1px solid #3a3320; padding-top: 8px; }
+  .ligne { display: flex; justify-content: space-between; padding: 3px 0; font-size: 16px; }
+  .solde { font-weight: bold; font-size: 20px; }
+  .solde.du { color: #ff7a7a; }
+  .solde.ok { color: #5be08a; }
+  .credit { color: #f0d77a; font-size: 14px; }
+  details summary { cursor: pointer; color: var(--or); margin-top: 8px; }
+  input[type=text], input[type=email], input[type=password], input[type=datetime-local], select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #4a4128; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: var(--gris2); color: var(--texte); }
+  button { padding: 12px 14px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 4px 4px 0 0; font-family: inherit; }
+  .principal { background: var(--or); color: #000; font-weight: bold; }
+  .pointer { background: #2da44e; color: white; }
+  .secondaire { background: #2a2a2a; color: var(--texte); border: 1px solid #4a4128; }
+  .danger { background: #3a1414; color: #ff7a7a; border: 1px solid #ff7a7a; }
+  .cache { display: none; }
+  .erreur { color: #ff7a7a; margin: 6px 0; }
+  ul { padding-left: 18px; margin: 8px 0 0 0; font-size: 14px; color: #bdb59a; }
+  h2 { margin: 18px 0 8px 0; font-size: 18px; color: var(--or); }
+  .vide-msg { text-align: center; color: #8d866f; }
+</style>
+</head>
+<body>
+<header>Coach Sarsar Taieb<button id='deconnexion' class='cache' onclick='seDeconnecter()'>Quitter</button></header>
+<main>
+
+  <div id='ecranConnexion' class='carte'>
+    <h3>Connexion</h3>
+    <input type='email' id='email' placeholder='Ton e-mail' autocomplete='email'>
+    <input type='password' id='mdp' placeholder='Mot de passe' autocomplete='current-password'>
+    <div id='messageConnexion' class='erreur'></div>
+    <button class='principal' onclick='seConnecter()'>Se connecter</button>
+    <button class='secondaire' onclick='creerCompte()'>Créer mon compte</button>
+  </div>
+
+  <div id='espaceClient' class='cache'></div>
+
+  <div id='espaceCoach' class='cache'>
+    <div class='carte'>
+      <h3>Nouveau rendez-vous</h3>
+      <select id='rdvClient'></select>
+      <input type='datetime-local' id='rdvDate'>
+      <button class='principal' onclick='ajouterRdv()'>Planifier</button>
+    </div>
+    <h2>Demandes en attente</h2>
+    <div id='listeDemandes'></div>
+    <h2>Rendez-vous à venir</h2>
+    <div id='listeRdv'></div>
+    <h2>Clients</h2>
+    <div id='listeClients'></div>
+  </div>
+
+</main>
+
+<script>
+  const SUPABASE_URL = 'https://tfpaycxwubwfyqscpzeq.supabase.co';
+  const SUPABASE_CLE = 'sb_publishable_vwNP6G6cL9Wh3fwpJBNylQ_OJJzCs-5';
+
+  const TAILLE_PACK = 12;
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_CLE);
+
+  function montrer(id, oui) { document.getElementById(id).classList.toggle('cache', !oui); }
+  function dateFr(d, long) {
+    return new Date(d).toLocaleString('fr-FR', long ? { dateStyle: 'full', timeStyle: 'short' } : undefined);
+  }
+  function esc(t) {
+    return String(t == null ? '' : t).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split(String.fromCharCode(34)).join('&quot;').split(String.fromCharCode(39)).join('&#39;');
+  }
+  function nombre(x) { return Number(x) || 0; }
+  function dt(x) { return (Math.round(nombre(x) * 1000) / 1000).toString().replace('.', ',') + ' DT'; }
+  function lireMontant(texte) {
+    if (texte === null) return null;
+    const n = parseFloat(String(texte).split(' ').join('').replace(',', '.'));
+    if (isNaN(n)) { alert('Montant invalide.'); return null; }
+    return n;
+  }
+  function erreur(res) {
+    if (res && res.error) { alert('Erreur : ' + res.error.message); return true; }
+    return false;
+  }
+
+  // Calcul du compte d'un client : total dû, versé, reste, statut
+  function compte(profil, versements) {
+    const du = nombre(profil.total_du);
+    const verse = (versements || []).reduce((s, p) => s + nombre(p.montant), 0);
+    const solde = du - verse;
+    let statut = { classe: 'nonpaye', texte: 'Non payé' };
+    if (du <= 0) statut = verse > 0 ? { classe: 'partiel', texte: 'Avance versée' } : { classe: 'neutre', texte: 'Prix non défini' };
+    else if (solde <= 0.0005) statut = { classe: 'paye', texte: 'Payé' };
+    else if (verse > 0) statut = { classe: 'partiel', texte: 'Avance versée' };
+    return { du: du, verse: verse, reste: Math.max(0, solde), credit: Math.max(0, -solde), statut: statut };
+  }
+
+  function blocCompte(profil, versements) {
+    const k = compte(profil, versements);
+    const lignes = (versements || []).slice().sort((a, b) => b.date_paiement.localeCompare(a.date_paiement));
+    return `
+      <span class='badge ${k.statut.classe}'>${k.statut.texte}</span>
+      <div class='compte'>
+        <div class='ligne'><span>Total dû</span><span>${dt(k.du)}</span></div>
+        <div class='ligne'><span>Déjà versé</span><span>${dt(k.verse)}</span></div>
+        <div class='ligne solde ${k.reste > 0 ? 'du' : 'ok'}'><span>Reste à payer</span><span>${dt(k.reste)}</span></div>
+        ${k.credit > 0 ? '<div class="credit">Avance déjà versée pour le prochain pack : ' + dt(k.credit) + '</div>' : ''}
+      </div>
+      <details><summary>Versements (${lignes.length})</summary>
+        <ul>${lignes.length ? lignes.map(p => '<li>' + dateFr(p.date_paiement) + ' : ' + dt(p.montant) + '</li>').join('') : '<li>Aucun versement.</li>'}</ul>
+      </details>`;
+  }
+
+  async function seConnecter() {
+    const email = document.getElementById('email').value.trim();
+    const mdp = document.getElementById('mdp').value;
+    document.getElementById('messageConnexion').textContent = 'Connexion en cours...';
+    const { error } = await sb.auth.signInWithPassword({ email: email, password: mdp });
+    if (error) { document.getElementById('messageConnexion').textContent = 'Connexion impossible : ' + error.message; return; }
+    document.getElementById('messageConnexion').textContent = '';
+    demarrer();
+  }
+
+  async function creerCompte() {
+    const email = document.getElementById('email').value.trim();
+    const mdp = document.getElementById('mdp').value;
+    if (!email || mdp.length < 6) { document.getElementById('messageConnexion').textContent = 'Entre un e-mail et un mot de passe de 6 caractères minimum.'; return; }
+    const { error } = await sb.auth.signUp({ email: email, password: mdp });
+    if (error) { document.getElementById('messageConnexion').textContent = 'Création impossible : ' + error.message; return; }
+    document.getElementById('messageConnexion').textContent = '';
+    seConnecter();
+  }
+
+  async function seDeconnecter() {
+    await sb.auth.signOut();
+    montrer('ecranConnexion', true);
+    montrer('espaceClient', false);
+    montrer('espaceCoach', false);
+    montrer('deconnexion', false);
+  }
+
+  async function demarrer() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data: profil } = await sb.from('profils').select('*').eq('id', user.id).single();
+    if (!profil) { alert('Profil introuvable.'); return; }
+    montrer('ecranConnexion', false);
+    montrer('deconnexion', true);
+    if (profil.role === 'coach') {
+      montrer('espaceCoach', true);
+      montrer('espaceClient', false);
+      afficherCoach();
+    } else {
+      montrer('espaceClient', true);
+      montrer('espaceCoach', false);
+      afficherClient(profil);
+    }
+  }
+
+  async function afficherClient(profil) {
+    const { data: rdvs } = await sb.from('rendez_vous').select('*').eq('client_id', profil.id).eq('fait', false).order('date_rdv');
+    const { data: points } = await sb.from('pointages').select('*').eq('client_id', profil.id).order('date_pointage', { ascending: false });
+    const { data: versements } = await sb.from('paiements').select('*').eq('client_id', profil.id);
+    const { data: demandes } = await sb.from('demandes_rdv').select('*').eq('client_id', profil.id).order('date_demandee', { ascending: false }).limit(10);
+    const etat = { attente: ['partiel', 'En attente'], accepte: ['paye', 'Accepté'], refuse: ['nonpaye', 'Refusé'] };
+    document.getElementById('espaceClient').innerHTML = `
+      <div class='carte'>
+        <h3>Bonjour ${esc(profil.nom || profil.email)}</h3>
+        <div class='reste ${profil.seances_restantes === 0 ? 'vide' : ''}'>${profil.seances_restantes} séance(s) restante(s)</div>
+        ${blocCompte(profil, versements)}
+      </div>
+      <h2>Demander un rendez-vous</h2>
+      <div class='carte'>
+        <input type='datetime-local' id='demandeDate'>
+        <button class='principal' onclick='demanderRdv()'>Envoyer ma demande</button>
+        ${(demandes && demandes.length) ? '<ul>' + demandes.map(d => '<li>' + dateFr(d.date_demandee, true) + ' <span class="badge ' + etat[d.statut][0] + '">' + etat[d.statut][1] + '</span></li>').join('') + '</ul>' : ''}
+      </div>
+      <h2>Mes prochains rendez-vous</h2>
+      ${(rdvs && rdvs.length) ? rdvs.map(r => '<div class="carte">' + dateFr(r.date_rdv, true) + '</div>').join('') : '<p class="vide-msg">Aucun rendez-vous prévu.</p>'}
+      <h2>Mes séances effectuées</h2>
+      <div class='carte'><ul>${(points && points.length) ? points.map(p => '<li>' + dateFr(p.date_pointage) + '</li>').join('') : '<li>Aucune séance pour le moment.</li>'}</ul></div>`;
+  }
+
+  async function afficherCoach() {
+    const { data: clients } = await sb.from('profils').select('*').eq('role', 'client').order('nom', { nullsFirst: false });
+    const { data: rdvs } = await sb.from('rendez_vous').select('*').eq('fait', false).order('date_rdv');
+    const { data: versements } = await sb.from('paiements').select('*');
+    const { data: demandes } = await sb.from('demandes_rdv').select('*').eq('statut', 'attente').order('date_demandee');
+    const liste = clients || [];
+
+    document.getElementById('rdvClient').innerHTML = liste.map(c => '<option value="' + c.id + '">' + esc(c.nom || c.email) + '</option>').join('');
+
+    const nom = id => { const c = liste.find(x => x.id === id); return c ? esc(c.nom || c.email) : 'Client inconnu'; };
+    document.getElementById('listeDemandes').innerHTML = (demandes && demandes.length) ? demandes.map(d => `
+      <div class='carte'>
+        <h3>${nom(d.client_id)}</h3>
+        <div>${dateFr(d.date_demandee, true)}</div>
+        <button class='pointer' data-d='${d.id}' onclick='accepterDemande(this.dataset.d)'>Accepter</button>
+        <button class='danger' data-d='${d.id}' onclick='refuserDemande(this.dataset.d)'>Refuser</button>
+      </div>`).join('') : '<p class="vide-msg">Aucune demande en attente.</p>';
+
+    document.getElementById('listeRdv').innerHTML = (rdvs && rdvs.length) ? rdvs.map(r => `
+      <div class='carte'>
+        <h3>${nom(r.client_id)}</h3>
+        <div>${dateFr(r.date_rdv, true)}</div>
+        <button class='pointer' data-r='${r.id}' data-id='${r.client_id}' onclick='rdvFait(this.dataset.r, this.dataset.id)'>Séance faite (pointer)</button>
+        <button class='danger' data-r='${r.id}' onclick='annulerRdv(this.dataset.r)'>Annuler</button>
+      </div>`).join('') : '<p class="vide-msg">Aucun rendez-vous.</p>';
+
+    document.getElementById('listeClients').innerHTML = liste.length ? liste.map(c => `
+      <div class='carte'>
+        <h3>${esc(c.nom || c.email)}</h3>
+        <div>${esc(c.email)}</div>
+        <div class='reste ${c.seances_restantes === 0 ? 'vide' : ''}'>${c.seances_restantes} séance(s) restante(s)</div>
+        ${blocCompte(c, (versements || []).filter(p => p.client_id === c.id))}
+        <button class='pointer' data-id='${c.id}' onclick='pointer(this.dataset.id)'>Pointer une séance</button>
+        <button class='secondaire' data-id='${c.id}' onclick='annulerPointage(this.dataset.id)'>Annuler la dernière</button>
+        <button class='principal' data-id='${c.id}' onclick='ajouterVersement(this.dataset.id)'>Ajouter un versement</button>
+        <button class='secondaire' data-id='${c.id}' onclick='annulerVersement(this.dataset.id)'>Annuler le dernier versement</button>
+        <button class='principal' data-id='${c.id}' onclick='renouveler(this.dataset.id)'>Nouveau pack de 12</button>
+        <button class='secondaire' data-id='${c.id}' onclick='ajouterPrix(this.dataset.id)'>Prix du pack en cours</button>
+        <button class='secondaire' data-id='${c.id}' onclick='corrigerTotal(this.dataset.id)'>Corriger le total dû</button>
+        <button class='secondaire' data-id='${c.id}' onclick='renommer(this.dataset.id)'>Changer le nom</button>
+      </div>`).join('') : '<p class="vide-msg">Aucun client pour le moment. Tes clients doivent créer leur compte depuis la page de connexion.</p>';
+  }
+
+  async function ajouterVersement(id) {
+    const m = lireMontant(prompt('Montant du versement, en dinars (DT) :'));
+    if (m === null) return;
+    if (!(m > 0)) { alert('Le montant doit être supérieur à zéro.'); return; }
+    if (erreur(await sb.from('paiements').insert({ client_id: id, montant: m }))) return;
+    afficherCoach();
+  }
+
+  async function annulerVersement(id) {
+    const { data: dernier } = await sb.from('paiements').select('*').eq('client_id', id).order('date_paiement', { ascending: false }).limit(1);
+    if (!dernier || dernier.length === 0) { alert('Aucun versement à annuler.'); return; }
+    if (!confirm('Annuler le dernier versement de ' + dt(dernier[0].montant) + ' ?')) return;
+    if (erreur(await sb.from('paiements').delete().eq('id', dernier[0].id))) return;
+    afficherCoach();
+  }
+
+  async function renouveler(id) {
+    const prix = lireMontant(prompt('Prix de ce nouveau pack de ' + TAILLE_PACK + ' séances, en dinars (DT) :'));
+    if (prix === null) return;
+    if (prix < 0) { alert('Le prix ne peut pas être négatif.'); return; }
+    const { data: c } = await sb.from('profils').select('seances_restantes, total_du').eq('id', id).single();
+    if (erreur(await sb.from('profils').update({ seances_restantes: c.seances_restantes + TAILLE_PACK, total_du: nombre(c.total_du) + prix }).eq('id', id))) return;
+    afficherCoach();
+  }
+
+  async function ajouterPrix(id) {
+    const prix = lireMontant(prompt('Prix du pack en cours, en dinars (DT) :'));
+    if (prix === null) return;
+    if (prix < 0) { alert('Le prix ne peut pas être négatif.'); return; }
+    const { data: c } = await sb.from('profils').select('total_du').eq('id', id).single();
+    if (erreur(await sb.from('profils').update({ total_du: nombre(c.total_du) + prix }).eq('id', id))) return;
+    afficherCoach();
+  }
+
+  async function corrigerTotal(id) {
+    const { data: c } = await sb.from('profils').select('total_du').eq('id', id).single();
+    const n = lireMontant(prompt('Nouveau total dû, en dinars (DT) :', String(nombre(c.total_du))));
+    if (n === null) return;
+    if (n < 0) { alert('Le total ne peut pas être négatif.'); return; }
+    if (erreur(await sb.from('profils').update({ total_du: n }).eq('id', id))) return;
+    afficherCoach();
+  }
+
+  async function pointer(id) {
+    const { data: c } = await sb.from('profils').select('seances_restantes').eq('id', id).single();
+    if (c.seances_restantes <= 0) { alert('Plus de séances dans ce pack.'); return; }
+    await sb.from('profils').update({ seances_restantes: c.seances_restantes - 1 }).eq('id', id);
+    await sb.from('pointages').insert({ client_id: id });
+    afficherCoach();
+  }
+
+  async function annulerPointage(id) {
+    const { data: dernier } = await sb.from('pointages').select('id').eq('client_id', id).order('date_pointage', { ascending: false }).limit(1);
+    if (!dernier || dernier.length === 0) { alert('Aucun pointage à annuler.'); return; }
+    const { data: c } = await sb.from('profils').select('seances_restantes').eq('id', id).single();
+    await sb.from('pointages').delete().eq('id', dernier[0].id);
+    await sb.from('profils').update({ seances_restantes: c.seances_restantes + 1 }).eq('id', id);
+    afficherCoach();
+  }
+
+  async function renommer(id) {
+    const nom = prompt('Nom du client :');
+    if (!nom) return;
+    await sb.from('profils').update({ nom: nom.trim() }).eq('id', id);
+    afficherCoach();
+  }
+
+  async function demanderRdv() {
+    const date = document.getElementById('demandeDate').value;
+    if (!date) { alert('Choisis une date et une heure.'); return; }
+    if (new Date(date) < new Date()) { alert('Choisis une date dans le futur.'); return; }
+    const { data: { user } } = await sb.auth.getUser();
+    if (erreur(await sb.from('demandes_rdv').insert({ client_id: user.id, date_demandee: new Date(date).toISOString() }))) return;
+    alert('Demande envoyée. Le coach va te répondre.');
+    demarrer();
+  }
+
+  async function accepterDemande(id) {
+    const { data: d } = await sb.from('demandes_rdv').select('*').eq('id', id).single();
+    if (erreur(await sb.from('rendez_vous').insert({ client_id: d.client_id, date_rdv: d.date_demandee }))) return;
+    if (erreur(await sb.from('demandes_rdv').update({ statut: 'accepte' }).eq('id', id))) return;
+    afficherCoach();
+  }
+
+  async function refuserDemande(id) {
+    if (!confirm('Refuser cette demande ?')) return;
+    if (erreur(await sb.from('demandes_rdv').update({ statut: 'refuse' }).eq('id', id))) return;
+    afficherCoach();
+  }
+
+  async function ajouterRdv() {
+    const clientId = document.getElementById('rdvClient').value;
+    const date = document.getElementById('rdvDate').value;
+    if (!clientId || !date) { alert('Choisis un client et une date.'); return; }
+    await sb.from('rendez_vous').insert({ client_id: clientId, date_rdv: new Date(date).toISOString() });
+    document.getElementById('rdvDate').value = '';
+    afficherCoach();
+  }
+
+  async function rdvFait(rdvId, clientId) {
+    await pointer(clientId);
+    await sb.from('rendez_vous').update({ fait: true }).eq('id', rdvId);
+    afficherCoach();
+  }
+
+  async function annulerRdv(id) {
+    if (!confirm('Annuler ce rendez-vous ?')) return;
+    await sb.from('rendez_vous').delete().eq('id', id);
+    afficherCoach();
+  }
+
+  demarrer();
+</script>
+</body>
+</html>
